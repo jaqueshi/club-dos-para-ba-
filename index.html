@@ -544,6 +544,10 @@ body {
         </div>
         <button class="btn btn-verde" id="btn-add-prod" onclick="adicionarProduto()">➕ Adicionar</button>
       </div>
+      <div style="border-top:2px solid var(--borda);margin-top:20px;padding-top:16px;display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-verde" onclick="salvarCardapio()" style="font-size:1rem;padding:15px">💾 Salvar cardápio</button>
+        <button class="btn btn-cinza" onclick="fecharModalCardapio()" style="font-size:1rem;padding:15px">← Voltar sem salvar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -807,6 +811,16 @@ const CARDAPIO = [
   { cat:'🍦 Sorvete', nome:'Picolé', preco:7 },
 ];
 const CATS = ['🍺 Cervejas','🍽️ Porções','🥤 Refrigerantes','🍹 Caipirinhas','🥃 Doses','🍡 Doces e Salgadinhos','🍦 Sorvete'];
+
+// Carrega cardápio salvo (se o usuário editou)
+const _cardapioSalvo = localStorage.getItem('cp_cardapio');
+if (_cardapioSalvo) {
+  try {
+    const _parsed = JSON.parse(_cardapioSalvo);
+    CARDAPIO.length = 0;
+    _parsed.forEach(p => CARDAPIO.push(p));
+  } catch(e) {}
+}
 
 /* ===== SUPABASE ===== */
 const SUPA_URL = 'https://knrdxwvsnaqrytzvgenb.supabase.co';
@@ -1496,6 +1510,12 @@ function cfgMudarCat(cat) {
   renderCardapioConfig();
 }
 
+function salvarCardapio() {
+  localStorage.setItem('cp_cardapio', JSON.stringify(CARDAPIO));
+  fecharModalCardapio();
+  dialogo({ icone: '✅', msg: 'Cardápio salvo!', btns: [{ label: 'OK', cls: 'verde', cb: null }] });
+}
+
 function adicionarProduto() {
   const nome  = document.getElementById('cfg-novo-nome').value.trim();
   const cat   = document.getElementById('cfg-novo-cat').value;
@@ -1513,21 +1533,10 @@ function adicionarProduto() {
 function excluirProduto(idx) {
   const p = CARDAPIO[idx];
   if (!p) return;
-  const nomeP = p.nome;
-  const catP  = p.cat;
-  const precoP = p.preco;
-  dialogo({
-    icone: '🗑️',
-    msg: 'Remover "' + nomeP + '" do cardápio?',
-    btns: [
-      { label: 'Sim, remover', cls: 'vermelho', cb: () => {
-        const i = CARDAPIO.findIndex(x => x.nome === nomeP && x.cat === catP && x.preco === precoP);
-        if (i !== -1) CARDAPIO.splice(i, 1);
-        renderCardapioConfig();
-      }},
-      { label: 'Cancelar', cls: 'cinza', cb: null }
-    ]
-  });
+  const nomeP = p.nome, catP = p.cat, precoP = p.preco;
+  const i = CARDAPIO.findIndex(x => x.nome === nomeP && x.cat === catP && x.preco === precoP);
+  if (i !== -1) CARDAPIO.splice(i, 1);
+  renderCardapioConfig();
 }
 
 function resetFormCardapio() {
