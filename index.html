@@ -1512,11 +1512,19 @@ function adicionarProduto() {
 
 function excluirProduto(idx) {
   const p = CARDAPIO[idx];
+  if (!p) return;
+  const nomeP = p.nome;
+  const catP  = p.cat;
+  const precoP = p.preco;
   dialogo({
     icone: '🗑️',
-    msg: 'Remover "' + p.nome + '" do cardápio?',
+    msg: 'Remover "' + nomeP + '" do cardápio?',
     btns: [
-      { label: 'Sim, remover', cls: 'vermelho', cb: () => { CARDAPIO.splice(idx, 1); renderCardapioConfig(); } },
+      { label: 'Sim, remover', cls: 'vermelho', cb: () => {
+        const i = CARDAPIO.findIndex(x => x.nome === nomeP && x.cat === catP && x.preco === precoP);
+        if (i !== -1) CARDAPIO.splice(i, 1);
+        renderCardapioConfig();
+      }},
       { label: 'Cancelar', cls: 'cinza', cb: null }
     ]
   });
