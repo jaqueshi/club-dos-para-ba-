@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Comanda do Club</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -360,7 +361,12 @@ body {
 <body>
 
 <!-- TELA DE PIN -->
-<div class="pin-tela ativa" id="pin-tela">
+<div id="loading-overlay" style="display:flex;position:fixed;inset:0;background:var(--verde);z-index:3000;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+  <div style="font-size:3rem">🌴</div>
+  <div style="color:white;font-size:1.1rem;font-weight:700">Carregando...</div>
+</div>
+
+<div class="pin-tela" id="pin-tela">
   <div class="pin-logo">🌴</div>
   <div class="pin-titulo">Club dos Paraíba</div>
   <div class="pin-sub" id="pin-sub">Digite o PIN para entrar</div>
@@ -751,15 +757,69 @@ const CARDAPIO = [
 ];
 const CATS = ['🍺 Cervejas','🍽️ Porções','🥤 Refrigerantes','🍹 Caipirinhas','🥃 Doses','🍡 Doces e Salgadinhos','🍦 Sorvete'];
 
-let comandas  = JSON.parse(localStorage.getItem('cp_c') || '[]');
-let historico = JSON.parse(localStorage.getItem('cp_h') || '[]');
+/* ===== SUPABASE ===== */
+const SUPA_URL = 'https://knrdxwvsnaqrytzvgenb.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtucmR4d3ZzbmFxcnl0enZnZW5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2Mzk2MzksImV4cCI6MjA5MDIxNTYzOX0.0uf0zYPn6mEy0LHF1eozpEoFTtp-778E-8Zn_ZTWyn0';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let comandas  = [];
+let historico = [];
 let mId = null, catAtiva = CATS[0], qtdPisc = 0;
 const prodQtds = {};
 
-const salvar = () => {
+/* Carrega dados do Supabase ao iniciar */
+async function carregarDados() {
+  mostrarCarregando(true);
+  try {
+    const [{ data: c }, { data: h }] = await Promise.all([
+      sb.from('comandas').select('*').order('aberta', { ascending: true }),
+      sb.from('historico').select('*').order('data', { ascending: false })
+    ]);
+    comandas  = c || [];
+    historico = h || [];
+  } catch(e) {
+    console.error('Erro ao carregar:', e);
+  }
+  mostrarCarregando(false);
+  atualizaBadge();
+}
+
+function mostrarCarregando(show) {
+  let el = document.getElementById('loading-overlay');
+  if (!el) return;
+  el.style.display = show ? 'flex' : 'none';
+}
+
+/* Salva comanda no Supabase */
+async function salvarComanda(c) {
+  await sb.from('comandas').upsert({
+    id: c.id, nome: c.nome, itens: c.itens, aberta: c.aberta
+  });
+}
+
+/* Remove comanda do Supabase */
+async function deletarComanda(id) {
+  await sb.from('comandas').delete().eq('id', id);
+}
+
+/* Salva item no histórico */
+async function salvarHistorico(h) {
+  await sb.from('historico').insert({
+    nome: h.nome, itens: h.itens, total: h.total, data: h.data
+  });
+}
+
+/* Limpa histórico */
+async function deletarHistorico() {
+  await sb.from('historico').delete().neq('id', 0);
+}
+
+/* Compatibilidade — salvar local também como backup */
+const salvarLocal = () => {
   localStorage.setItem('cp_c', JSON.stringify(comandas));
   localStorage.setItem('cp_h', JSON.stringify(historico));
 };
+/* ===== FIM SUPABASE ===== */
 
 /* NAV */
 function irPara(pg) {
@@ -797,7 +857,7 @@ function abrirComanda() {
   const itens = [];
   if (qtdPisc > 0) itens.push({ nome: 'Piscina ×' + qtdPisc, preco: qtdPisc * 20, qtd: 1, pisc: true });
   const c = { id: Date.now(), nome: nome, itens: itens, aberta: new Date().toISOString() };
-  comandas.push(c); salvar();
+  comandas.push(c); salvarLocal(); salvarComanda(c);
   document.getElementById('nomeCliente').value = '';
   qtdPisc = 0; mudarP(0);
   abrirModal(c.id);
@@ -895,7 +955,7 @@ function addItemQtd(nome, preco) {
   if (ex) ex.qtd = (ex.qtd || 1) + qtd;
   else c.itens.push({ nome: nome, preco: preco, qtd: qtd });
   prodQtds[nome] = 0;
-  salvar();
+  salvarLocal();
 
   // Atualiza só o contador do produto na tela, sem rerenderizar tudo
   const id = nome.replace(/\s/g, '_');
@@ -935,7 +995,7 @@ function renderItens() {
 function addQtd(idx) {
   const c = comandas.find(x => x.id === mId);
   c.itens[idx].qtd = (c.itens[idx].qtd || 1) + 1;
-  salvar(); renderItens();
+  salvarLocal(); salvarComanda(comandas.find(x=>x.id===mId)); renderItens();
 }
 
 function rmIt(idx) {
@@ -943,13 +1003,13 @@ function rmIt(idx) {
   const it = c.itens[idx];
   if ((it.qtd || 1) > 1) {
     it.qtd--;
-    salvar(); renderItens();
+    salvarLocal(); salvarComanda(comandas.find(x=>x.id===mId)); renderItens();
   } else {
     dialogo({
       icone: '🗑️',
       msg: 'Remover "' + it.nome + '" da comanda?',
       btns: [
-        { label: 'Sim, remover', cls: 'vermelho', cb: () => { c.itens.splice(idx, 1); salvar(); renderItens(); } },
+        { label: 'Sim, remover', cls: 'vermelho', cb: () => { c.itens.splice(idx, 1); salvarLocal(); salvarComanda(comandas.find(x=>x.id===mId)); renderItens(); } },
         { label: 'Cancelar', cls: 'cinza', cb: null }
       ]
     });
@@ -964,8 +1024,9 @@ function excluirC() {
     msg: 'Excluir a comanda de ' + c.nome + '?\n\nIsso não será registrado no relatório.',
     btns: [
       { label: 'Sim, excluir', cls: 'vermelho', cb: () => {
-        comandas = comandas.filter(x => x.id !== mId);
-        mId = null; salvar(); fecharModal();
+        const id = mId;
+        comandas = comandas.filter(x => x.id !== id);
+        mId = null; salvarLocal(); deletarComanda(id); fecharModal();
       }},
       { label: 'Cancelar', cls: 'cinza', cb: null }
     ]
@@ -986,14 +1047,17 @@ function fecharCobranca() {
   document.getElementById('cobr-overlay').classList.remove('aberto');
 }
 
-function confirmarPago() {
+async function confirmarPago() {
   const c = comandas.find(x => x.id === mId);
   if (!c) return;
   const tot = totalC(c);
   const nomeC = c.nome;
-  historico.push({ nome: nomeC, itens: c.itens.map(i => Object.assign({}, i)), total: tot, data: new Date().toISOString() });
-  comandas = comandas.filter(x => x.id !== mId);
-  mId = null; salvar();
+  const h = { nome: nomeC, itens: c.itens.map(i => Object.assign({}, i)), total: tot, data: new Date().toISOString() };
+  historico.unshift(h);
+  const idFechado = mId;
+  comandas = comandas.filter(x => x.id !== idFechado);
+  mId = null; salvarLocal();
+  await Promise.all([deletarComanda(idFechado), salvarHistorico(h)]);
   document.getElementById('cobr-overlay').classList.remove('aberto');
   document.getElementById('overlay').classList.remove('aberto');
   renderAbertas();
@@ -1202,7 +1266,7 @@ function limpar() {
     icone: '🗑️',
     msg: 'Apagar todo o histórico?\n\nEssa ação não pode ser desfeita!',
     btns: [
-      { label: 'Sim, apagar tudo', cls: 'vermelho', cb: () => { historico = []; salvar(); renderResumo(); mudarAba(abaAtiva); }},
+      { label: 'Sim, apagar tudo', cls: 'vermelho', cb: async () => { historico = []; salvarLocal(); await deletarHistorico(); renderResumo(); mudarAba(abaAtiva); }},
       { label: 'Cancelar', cls: 'cinza', cb: null }
     ]
   });
@@ -1433,7 +1497,10 @@ const mesStr   = d => d.toISOString().slice(0, 7);
 const hora     = d => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 const dataHora = d => d.toLocaleDateString('pt-BR') + ' ' + hora(d);
 
-atualizaBadge();
+/* INIT */
+carregarDados().then(() => {
+  document.getElementById('pin-tela').classList.add('ativa');
+});
 </script>
 </body>
 </html>
