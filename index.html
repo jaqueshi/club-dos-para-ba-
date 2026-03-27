@@ -633,10 +633,17 @@ body {
 <script>
 /* ===== PIN ===== */
 const PIN_DEFAULT = '1234';
+let pinSalvo = PIN_DEFAULT;
 let pinDigitado = '';
-let pinModo = 'entrar'; // 'entrar'
 
-function pinGetSalvo() { return localStorage.getItem('cp_pin') || PIN_DEFAULT; }
+async function carregarPin() {
+  try {
+    const { data } = await sb.from('configuracoes').select('valor').eq('chave', 'pin').single();
+    if (data) pinSalvo = data.valor;
+  } catch(e) { pinSalvo = PIN_DEFAULT; }
+}
+
+function pinGetSalvo() { return pinSalvo; }
 
 function pinDigito(d) {
   if (pinDigitado.length >= 4) return;
@@ -685,7 +692,7 @@ function sair() {
   document.getElementById('pin-tela').classList.add('ativa');
 }
 
-function salvarPin() {
+async function salvarPin() {
   const atual = document.getElementById('cfg-pin-atual').value;
   const novo  = document.getElementById('cfg-pin-novo').value;
   const conf  = document.getElementById('cfg-pin-conf').value;
@@ -698,7 +705,8 @@ function salvarPin() {
   if (novo !== conf) {
     dialogo({ icone: '❌', msg: 'Os PINs não coincidem!', btns: [{ label: 'OK', cls: 'cinza', cb: null }] }); return;
   }
-  localStorage.setItem('cp_pin', novo);
+  pinSalvo = novo;
+  await sb.from('configuracoes').upsert({ chave: 'pin', valor: novo });
   document.getElementById('cfg-pin-atual').value = '';
   document.getElementById('cfg-pin-novo').value  = '';
   document.getElementById('cfg-pin-conf').value  = '';
@@ -799,6 +807,7 @@ async function carregarDados() {
     ]);
     comandas  = c || [];
     historico = h || [];
+    await carregarPin();
   } catch(e) {
     console.error('Erro ao carregar:', e);
   }
