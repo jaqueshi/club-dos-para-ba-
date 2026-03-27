@@ -408,7 +408,7 @@ body {
     <p>Digite o nome e toque em Abrir</p>
   </div>
   <label class="label">👤 Nome do cliente</label>
-  <input class="input" id="nomeCliente" type="text" placeholder="Ex: Aline, João..." />
+  <input class="input" id="nomeCliente" type="text" placeholder="Ex: Maria, João..." />
   <div class="contador-box">
     <div class="contador-label">🏊 Entradas na piscina — R$ 20,00 cada</div>
     <div class="contador-row">
@@ -494,6 +494,9 @@ body {
   </button>
   <button class="btn btn-branco" onclick="abrirModalCardapio()" style="margin-bottom:12px;font-size:1.1rem;padding:22px;border:2px solid var(--borda)">
     🍽️ Ver e Editar Cardápio
+  </button>
+  <button class="btn btn-vermelho" onclick="sair()" style="margin-bottom:12px;font-size:1.1rem;padding:22px">
+    🔒 Sair (bloquear app)
   </button>
   <button class="btn btn-cinza" onclick="irPara('nova')">← Voltar</button>
 </div>
@@ -672,6 +675,14 @@ function pinVerificar() {
   }
 }
 
+function sair() {
+  pinDigitado = '';
+  pinAtualizaPontos();
+  document.getElementById('pin-sub').textContent = 'Digite o PIN para entrar';
+  irPara('nova');
+  document.getElementById('pin-tela').classList.add('ativa');
+}
+
 function salvarPin() {
   const atual = document.getElementById('cfg-pin-atual').value;
   const novo  = document.getElementById('cfg-pin-novo').value;
@@ -696,15 +707,24 @@ function salvarPin() {
 
 const CARDAPIO = [
   // 🍺 Cervejas
-  { cat:'🍺 Cervejas', nome:'Heineken Latinha',   preco:8  },
-  { cat:'🍺 Cervejas', nome:'Heineken Longneck',  preco:12 },
-  { cat:'🍺 Cervejas', nome:'Skol',               preco:5  },
-  { cat:'🍺 Cervejas', nome:'Amstel',             preco:6  },
-  { cat:'🍺 Cervejas', nome:'Original',           preco:7  },
-  { cat:'🍺 Cervejas', nome:'Itaipava',           preco:5  },
-  { cat:'🍺 Cervejas', nome:'Brahma',             preco:6  },
-  { cat:'🍺 Cervejas', nome:'Ice',                preco:12 },
-  { cat:'🍺 Cervejas', nome:'Pitú Latinha',       preco:12 },
+  { cat:'🍺 Cervejas', nome:'Heineken Latinha',          preco:8   },
+  { cat:'🍺 Cervejas', nome:'Heineken Longneck',         preco:12  },
+  { cat:'🍺 Cervejas', nome:'Skol',                      preco:5   },
+  { cat:'🍺 Cervejas', nome:'Amstel',                    preco:6   },
+  { cat:'🍺 Cervejas', nome:'Original',                  preco:7   },
+  { cat:'🍺 Cervejas', nome:'Itaipava',                  preco:5   },
+  { cat:'🍺 Cervejas', nome:'Brahma',                    preco:6   },
+  { cat:'🍺 Cervejas', nome:'Ice',                       preco:12  },
+  { cat:'🍺 Cervejas', nome:'Pitú Latinha',              preco:12  },
+  { cat:'🍺 Cervejas', nome:'Balde Heineken Latinha',    preco:80  },
+  { cat:'🍺 Cervejas', nome:'Balde Heineken Longneck',   preco:120 },
+  { cat:'🍺 Cervejas', nome:'Balde Skol',                preco:50  },
+  { cat:'🍺 Cervejas', nome:'Balde Amstel',              preco:60  },
+  { cat:'🍺 Cervejas', nome:'Balde Original',            preco:70  },
+  { cat:'🍺 Cervejas', nome:'Balde Itaipava',            preco:50  },
+  { cat:'🍺 Cervejas', nome:'Balde Brahma',              preco:60  },
+  { cat:'🍺 Cervejas', nome:'Balde Ice',                 preco:120 },
+  { cat:'🍺 Cervejas', nome:'Balde Pitú Latinha',        preco:120 },
   // 🍽️ Porções
   { cat:'🍽️ Porções', nome:'Peixe Tilápia',      preco:50 },
   { cat:'🍽️ Porções', nome:'Frango',             preco:35 },
