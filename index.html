@@ -663,6 +663,7 @@ function pinAtualizaPontos(erro) {
 
 function pinVerificar() {
   if (pinDigitado === pinGetSalvo()) {
+    localStorage.setItem('cp_logado', '1');
     document.getElementById('pin-tela').classList.remove('ativa');
   } else {
     pinAtualizaPontos(true);
@@ -676,6 +677,7 @@ function pinVerificar() {
 }
 
 function sair() {
+  localStorage.removeItem('cp_logado');
   pinDigitado = '';
   pinAtualizaPontos();
   document.getElementById('pin-sub').textContent = 'Digite o PIN para entrar';
@@ -1519,7 +1521,11 @@ const dataHora = d => d.toLocaleDateString('pt-BR') + ' ' + hora(d);
 
 /* INIT */
 carregarDados().then(() => {
-  document.getElementById('pin-tela').classList.add('ativa');
+  if (localStorage.getItem('cp_logado') === '1') {
+    document.getElementById('loading-overlay').style.display = 'none';
+  } else {
+    document.getElementById('pin-tela').classList.add('ativa');
+  }
 });
 </script>
 </body>
