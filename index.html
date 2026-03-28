@@ -555,7 +555,7 @@ body {
         <button class="btn btn-verde" id="btn-add-prod" onclick="adicionarProduto()">➕ Adicionar</button>
       </div>
       <div style="border-top:2px solid var(--borda);margin-top:20px;padding-top:16px;display:flex;flex-direction:column;gap:10px">
-        <button class="btn btn-verde" onclick="salvarCardapio()" style="font-size:1rem;padding:15px">💾 Salvar cardápio</button>
+        <button class="btn btn-verde" id="btn-salvar-cardapio" onclick="salvarCardapio()" style="font-size:1rem;padding:15px">💾 Salvar cardápio</button>
         <button class="btn btn-cinza" onclick="fecharModalCardapio()" style="font-size:1rem;padding:15px">← Voltar sem salvar</button>
       </div>
     </div>
@@ -780,8 +780,6 @@ const CARDAPIO = [
   { cat:'🍺 Cervejas', nome:'Balde Original',            preco:70  },
   { cat:'🍺 Cervejas', nome:'Balde Itaipava',            preco:50  },
   { cat:'🍺 Cervejas', nome:'Balde Brahma',              preco:60  },
-  { cat:'🍺 Cervejas', nome:'Balde Ice',                 preco:120 },
-  { cat:'🍺 Cervejas', nome:'Balde Pitú Latinha',        preco:120 },
   // 🍽️ Porções
   { cat:'🍽️ Porções', nome:'Peixe Tilápia',      preco:50 },
   { cat:'🍽️ Porções', nome:'Frango',             preco:35 },
@@ -834,14 +832,14 @@ const CARDAPIO = [
 ];
 const CATS = ['🍺 Cervejas','🍽️ Porções','🥤 Refrigerantes','🍹 Caipirinhas','🥃 Doses','🍡 Doces e Salgadinhos','🍦 Sorvete'];
 
-// Carrega cardápio salvo (se o usuário editou)
+// Carrega cardápio salvo pelo usuário (se editou nas configurações)
 const _cardapioSalvo = localStorage.getItem('cp_cardapio');
 if (_cardapioSalvo) {
   try {
     const _parsed = JSON.parse(_cardapioSalvo);
     CARDAPIO.length = 0;
     _parsed.forEach(p => CARDAPIO.push(p));
-  } catch(e) {}
+  } catch(e) { localStorage.removeItem('cp_cardapio'); }
 }
 
 /* ===== SUPABASE ===== */
@@ -858,16 +856,23 @@ const prodQtds = {};
 async function carregarDados() {
   mostrarCarregando(true);
   try {
-    const [{ data: c }, { data: h }] = await Promise.all([
+    const [{ data: c, error: e1 }, { data: h, error: e2 }] = await Promise.all([
       sb.from('comandas').select('*').order('aberta', { ascending: true }),
       sb.from('historico').select('*').order('data', { ascending: false })
     ]);
     comandas  = c || [];
     historico = h || [];
-    await carregarPin();
+    salvarLocal();
   } catch(e) {
-    console.error('Erro ao carregar:', e);
+    // fallback local
+    try {
+      const localC = localStorage.getItem('cp_c');
+      const localH = localStorage.getItem('cp_h');
+      if (localC) comandas  = JSON.parse(localC);
+      if (localH) historico = JSON.parse(localH);
+    } catch(e2) {}
   }
+  try { await carregarPin(); } catch(e) {}
   mostrarCarregando(false);
   atualizaBadge();
 }
@@ -878,28 +883,38 @@ function mostrarCarregando(show) {
   el.style.display = show ? 'flex' : 'none';
 }
 
-/* Salva comanda no Supabase */
 async function salvarComanda(c) {
-  await sb.from('comandas').upsert({
-    id: c.id, nome: c.nome, itens: c.itens, aberta: c.aberta
-  });
+  try {
+    await sb.from('comandas').upsert({
+      id: c.id, nome: c.nome, itens: c.itens, aberta: c.aberta
+    });
+  } catch(e) { mostrarAvisoSemConexao(); }
 }
 
-/* Remove comanda do Supabase */
 async function deletarComanda(id) {
-  await sb.from('comandas').delete().eq('id', id);
+  try { await sb.from('comandas').delete().eq('id', id); } catch(e) {}
 }
 
-/* Salva item no histórico */
 async function salvarHistorico(h) {
-  await sb.from('historico').insert({
-    nome: h.nome, itens: h.itens, total: h.total, data: h.data
-  });
+  try {
+    await sb.from('historico').insert({
+      nome: h.nome, itens: h.itens, total: h.total, data: h.data
+    });
+  } catch(e) { mostrarAvisoSemConexao(); }
 }
 
-/* Limpa histórico */
 async function deletarHistorico() {
-  await sb.from('historico').delete().neq('id', 0);
+  try { await sb.from('historico').delete().neq('id', 0); } catch(e) {}
+}
+
+function mostrarAvisoSemConexao() {
+  if (document.getElementById('aviso-conexao')) return;
+  const aviso = document.createElement('div');
+  aviso.id = 'aviso-conexao';
+  aviso.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#000;text-align:center;padding:10px;font-weight:700;font-size:0.9rem;z-index:9999;cursor:pointer';
+  aviso.textContent = '⚠️ Erro ao salvar na nuvem — toque aqui para tentar novamente';
+  aviso.onclick = () => { aviso.remove(); carregarDados(); };
+  document.body.appendChild(aviso);
 }
 
 /* Compatibilidade — salvar local também como backup */
@@ -1564,6 +1579,8 @@ function cfgMudarCat(cat) {
 
 function salvarCardapio() {
   localStorage.setItem('cp_cardapio', JSON.stringify(CARDAPIO));
+  const btn = document.getElementById('btn-salvar-cardapio');
+  if (btn) { btn.style.background = ''; btn.textContent = '💾 Salvar cardápio'; }
   fecharModalCardapio();
   dialogo({ icone: '✅', msg: 'Cardápio salvo!', btns: [{ label: 'OK', cls: 'verde', cb: null }] });
 }
@@ -1589,6 +1606,9 @@ function excluirProduto(idx) {
   const i = CARDAPIO.findIndex(x => x.nome === nomeP && x.cat === catP && x.preco === precoP);
   if (i !== -1) CARDAPIO.splice(i, 1);
   renderCardapioConfig();
+  // destaca botão salvar
+  const btn = document.getElementById('btn-salvar-cardapio');
+  if (btn) { btn.style.background = '#dc2626'; btn.textContent = '💾 Salvar alterações!'; }
 }
 
 function resetFormCardapio() {
