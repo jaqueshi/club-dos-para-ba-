@@ -1114,8 +1114,7 @@ function addItemQtd(nome, preco) {
   else c.itens.push({ nome: nome, preco: preco, qtd: qtd });
   prodQtds[nome] = 0;
   salvarLocal();
-
-  // Atualiza só o contador do produto na tela, sem rerenderizar tudo
+  salvarComanda(c);
   const id = nome.replace(/\s/g, '_');
   const elQtd = document.getElementById('pqtd-' + id);
   const elMenos = document.getElementById('pmenos-' + id);
@@ -1123,8 +1122,6 @@ function addItemQtd(nome, preco) {
   if (elQtd)   elQtd.textContent = '0';
   if (elMenos) elMenos.disabled = true;
   if (elAdd)   elAdd.disabled = true;
-
-  // Atualiza só a lista de itens e o total
   renderItens();
 }
 
