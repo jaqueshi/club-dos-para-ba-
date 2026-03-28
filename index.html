@@ -424,6 +424,16 @@ body {
     </div>
     <div class="cnt-valor">R$ <span id="totalP">0,00</span></div>
   </div>
+
+  <div class="contador-box" style="margin-top:-4px">
+    <div class="contador-label">🧒 Piscina Infantil — R$ 15,00 cada</div>
+    <div class="contador-row">
+      <button class="btn-cnt" id="btnMenosInf" onclick="mudarPInf(-1)" disabled>−</button>
+      <div class="cnt-num" id="qtdPInf">0</div>
+      <button class="btn-cnt" onclick="mudarPInf(1)">+</button>
+    </div>
+    <div class="cnt-valor">R$ <span id="totalPInf">0,00</span></div>
+  </div>
   <button class="btn btn-verde" onclick="abrirComanda()">✅ Abrir Comanda</button>
 </div>
 
@@ -588,7 +598,7 @@ body {
       <div class="sec-label">Escolha o que adicionar</div>
 
       <!-- PISCINA DENTRO DA COMANDA -->
-      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div>
           <div style="font-weight:800;font-size:1rem;color:var(--verde)">🏊 Entrada Piscina</div>
           <div style="font-size:0.85rem;color:var(--cinza);margin-top:2px">R$ 20,00 por pessoa</div>
@@ -599,6 +609,19 @@ body {
           <button class="btn-pc" onclick="mudaPiscModal(1)" style="width:44px;height:44px;font-size:1.4rem">+</button>
         </div>
         <button class="btn-confirmar" id="pisc-modal-add" onclick="addPiscinaModal()" disabled style="width:52px;height:44px;font-size:1.3rem">✓</button>
+      </div>
+
+      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-weight:800;font-size:1rem;color:var(--verde)">🧒 Piscina Infantil</div>
+          <div style="font-size:0.85rem;color:var(--cinza);margin-top:2px">R$ 15,00 por criança</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0;background:var(--branco);border:2px solid var(--borda);border-radius:12px;overflow:hidden">
+          <button class="btn-pc menos" id="pisc-inf-modal-menos" onclick="mudaPiscInfModal(-1)" disabled style="width:44px;height:44px;font-size:1.4rem">−</button>
+          <div style="font-size:1.2rem;font-weight:900;min-width:32px;text-align:center" id="pisc-inf-modal-qtd">0</div>
+          <button class="btn-pc" onclick="mudaPiscInfModal(1)" style="width:44px;height:44px;font-size:1.4rem">+</button>
+        </div>
+        <button class="btn-confirmar" id="pisc-inf-modal-add" onclick="addPiscinaInfModal()" disabled style="width:52px;height:44px;font-size:1.3rem">✓</button>
       </div>
 
       <div class="cats" id="m-cats"></div>
@@ -829,7 +852,7 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 let comandas  = [];
 let historico = [];
-let mId = null, catAtiva = CATS[0], qtdPisc = 0;
+let mId = null, catAtiva = CATS[0], qtdPisc = 0, qtdPiscInf = 0;
 const prodQtds = {};
 
 /* Carrega dados do Supabase ao iniciar */
@@ -916,16 +939,25 @@ function mudarP(d) {
   document.getElementById('btnMenos').disabled = qtdPisc === 0;
 }
 
+function mudarPInf(d) {
+  qtdPiscInf = Math.max(0, qtdPiscInf + d);
+  document.getElementById('qtdPInf').textContent = qtdPiscInf;
+  document.getElementById('totalPInf').textContent = fmt(qtdPiscInf * 15);
+  document.getElementById('btnMenosInf').disabled = qtdPiscInf === 0;
+}
+
 /* ABRIR COMANDA */
-function abrirComanda() {
+async function abrirComanda() {
   const nome = document.getElementById('nomeCliente').value.trim();
   if (!nome) { alert('Digite o nome do cliente!'); return; }
   const itens = [];
   if (qtdPisc > 0) itens.push({ nome: 'Piscina ×' + qtdPisc, preco: qtdPisc * 20, qtd: 1, pisc: true });
+  if (qtdPiscInf > 0) itens.push({ nome: 'Piscina Infantil ×' + qtdPiscInf, preco: qtdPiscInf * 15, qtd: 1, pisc: true });
   const c = { id: Date.now(), nome: nome, itens: itens, aberta: new Date().toISOString() };
   comandas.push(c); salvarLocal(); salvarComanda(c);
   document.getElementById('nomeCliente').value = '';
   qtdPisc = 0; mudarP(0);
+  qtdPiscInf = 0; mudarPInf(0);
   abrirModal(c.id);
 }
 
@@ -1017,14 +1049,31 @@ function mudaPiscModal(d) {
 function addPiscinaModal() {
   if (piscModalQtd === 0) return;
   const c = comandas.find(x => x.id === mId);
-  const nome = 'Piscina ×' + piscModalQtd;
-  const preco = piscModalQtd * 20;
-  c.itens.push({ nome, preco, qtd: 1, pisc: true });
+  c.itens.push({ nome: 'Piscina ×' + piscModalQtd, preco: piscModalQtd * 20, qtd: 1, pisc: true });
   salvarLocal(); salvarComanda(c);
   piscModalQtd = 0;
   document.getElementById('pisc-modal-qtd').textContent = 0;
   document.getElementById('pisc-modal-menos').disabled = true;
   document.getElementById('pisc-modal-add').disabled   = true;
+  renderItens();
+}
+
+let piscInfModalQtd = 0;
+function mudaPiscInfModal(d) {
+  piscInfModalQtd = Math.max(0, piscInfModalQtd + d);
+  document.getElementById('pisc-inf-modal-qtd').textContent = piscInfModalQtd;
+  document.getElementById('pisc-inf-modal-menos').disabled = piscInfModalQtd === 0;
+  document.getElementById('pisc-inf-modal-add').disabled   = piscInfModalQtd === 0;
+}
+function addPiscinaInfModal() {
+  if (piscInfModalQtd === 0) return;
+  const c = comandas.find(x => x.id === mId);
+  c.itens.push({ nome: 'Piscina Infantil ×' + piscInfModalQtd, preco: piscInfModalQtd * 15, qtd: 1, pisc: true });
+  salvarLocal(); salvarComanda(c);
+  piscInfModalQtd = 0;
+  document.getElementById('pisc-inf-modal-qtd').textContent = 0;
+  document.getElementById('pisc-inf-modal-menos').disabled = true;
+  document.getElementById('pisc-inf-modal-add').disabled   = true;
   renderItens();
 }
 
