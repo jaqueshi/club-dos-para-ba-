@@ -598,30 +598,28 @@ body {
       <div class="sec-label">Escolha o que adicionar</div>
 
       <!-- PISCINA DENTRO DA COMANDA -->
-      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <div>
-          <div style="font-weight:800;font-size:1rem;color:var(--verde)">🏊 Entrada Piscina</div>
-          <div style="font-size:0.85rem;color:var(--cinza);margin-top:2px">R$ 20,00 por pessoa</div>
+      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:12px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:0.9rem;color:var(--verde)">🏊 Piscina — R$ 20,00</div>
         </div>
-        <div style="display:flex;align-items:center;gap:0;background:var(--branco);border:2px solid var(--borda);border-radius:12px;overflow:hidden">
-          <button class="btn-pc menos" id="pisc-modal-menos" onclick="mudaPiscModal(-1)" disabled style="width:44px;height:44px;font-size:1.4rem">−</button>
-          <div style="font-size:1.2rem;font-weight:900;min-width:32px;text-align:center" id="pisc-modal-qtd">0</div>
-          <button class="btn-pc" onclick="mudaPiscModal(1)" style="width:44px;height:44px;font-size:1.4rem">+</button>
+        <div style="display:flex;align-items:center;background:var(--branco);border:2px solid var(--borda);border-radius:10px;overflow:hidden">
+          <button class="btn-pc menos" id="pisc-modal-menos" onclick="mudaPiscModal(-1)" disabled style="width:36px;height:36px;font-size:1.2rem">−</button>
+          <div style="font-size:1rem;font-weight:900;min-width:26px;text-align:center" id="pisc-modal-qtd">0</div>
+          <button class="btn-pc" onclick="mudaPiscModal(1)" style="width:36px;height:36px;font-size:1.2rem">+</button>
         </div>
-        <button class="btn-confirmar" id="pisc-modal-add" onclick="addPiscinaModal()" disabled style="width:52px;height:44px;font-size:1.3rem">✓</button>
+        <button class="btn-confirmar" id="pisc-modal-add" onclick="addPiscinaModal()" disabled style="width:40px;height:36px;font-size:1.1rem;border-radius:10px">✓</button>
       </div>
 
-      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <div>
-          <div style="font-weight:800;font-size:1rem;color:var(--verde)">🧒 Piscina Infantil</div>
-          <div style="font-size:0.85rem;color:var(--cinza);margin-top:2px">R$ 15,00 por criança</div>
+      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:0.9rem;color:var(--verde)">🧒 Infantil — R$ 15,00</div>
         </div>
-        <div style="display:flex;align-items:center;gap:0;background:var(--branco);border:2px solid var(--borda);border-radius:12px;overflow:hidden">
-          <button class="btn-pc menos" id="pisc-inf-modal-menos" onclick="mudaPiscInfModal(-1)" disabled style="width:44px;height:44px;font-size:1.4rem">−</button>
-          <div style="font-size:1.2rem;font-weight:900;min-width:32px;text-align:center" id="pisc-inf-modal-qtd">0</div>
-          <button class="btn-pc" onclick="mudaPiscInfModal(1)" style="width:44px;height:44px;font-size:1.4rem">+</button>
+        <div style="display:flex;align-items:center;background:var(--branco);border:2px solid var(--borda);border-radius:10px;overflow:hidden">
+          <button class="btn-pc menos" id="pisc-inf-modal-menos" onclick="mudaPiscInfModal(-1)" disabled style="width:36px;height:36px;font-size:1.2rem">−</button>
+          <div style="font-size:1rem;font-weight:900;min-width:26px;text-align:center" id="pisc-inf-modal-qtd">0</div>
+          <button class="btn-pc" onclick="mudaPiscInfModal(1)" style="width:36px;height:36px;font-size:1.2rem">+</button>
         </div>
-        <button class="btn-confirmar" id="pisc-inf-modal-add" onclick="addPiscinaInfModal()" disabled style="width:52px;height:44px;font-size:1.3rem">✓</button>
+        <button class="btn-confirmar" id="pisc-inf-modal-add" onclick="addPiscinaInfModal()" disabled style="width:40px;height:36px;font-size:1.1rem;border-radius:10px">✓</button>
       </div>
 
       <div class="cats" id="m-cats"></div>
