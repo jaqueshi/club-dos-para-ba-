@@ -418,9 +418,9 @@ body {
   <div class="contador-box">
     <div class="contador-label">🏊 Entradas na piscina — R$ 20,00 cada</div>
     <div class="contador-row">
-      <button class="btn-cnt" id="btnMenos" onclick="mudarP(-1)" disabled>−</button>
-      <div class="cnt-num" id="qtdP">0</div>
-      <button class="btn-cnt" onclick="mudarP(1)">+</button>
+      <button class="btn-cnt" id="btnMenos" onclick="mudarP(-1)" disabled style="width:46px;height:46px;font-size:1.4rem">−</button>
+      <div class="cnt-num" id="qtdP" style="font-size:2rem">0</div>
+      <button class="btn-cnt" onclick="mudarP(1)" style="width:46px;height:46px;font-size:1.4rem">+</button>
     </div>
     <div class="cnt-valor">R$ <span id="totalP">0,00</span></div>
   </div>
@@ -428,9 +428,9 @@ body {
   <div class="contador-box" style="margin-top:-4px">
     <div class="contador-label">🧒 Piscina Infantil — R$ 15,00 cada</div>
     <div class="contador-row">
-      <button class="btn-cnt" id="btnMenosInf" onclick="mudarPInf(-1)" disabled>−</button>
-      <div class="cnt-num" id="qtdPInf">0</div>
-      <button class="btn-cnt" onclick="mudarPInf(1)">+</button>
+      <button class="btn-cnt" id="btnMenosInf" onclick="mudarPInf(-1)" disabled style="width:46px;height:46px;font-size:1.4rem">−</button>
+      <div class="cnt-num" id="qtdPInf" style="font-size:2rem">0</div>
+      <button class="btn-cnt" onclick="mudarPInf(1)" style="width:46px;height:46px;font-size:1.4rem">+</button>
     </div>
     <div class="cnt-valor">R$ <span id="totalPInf">0,00</span></div>
   </div>
@@ -598,28 +598,29 @@ body {
       <div class="sec-label">Escolha o que adicionar</div>
 
       <!-- PISCINA DENTRO DA COMANDA -->
-      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:12px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div style="flex:1">
-          <div style="font-weight:800;font-size:0.9rem;color:var(--verde)">🏊 Piscina — R$ 20,00</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1;background:#e0f2ea;border:2px solid #7dd3a8;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:0.95rem;font-weight:800;color:var(--verde)">🏊 Adulto — R$ 20</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;background:var(--branco);border-radius:10px;overflow:hidden;border:2px solid var(--borda)">
+              <button class="btn-pc menos" id="pisc-modal-menos" onclick="mudaPiscModal(-1)" disabled style="width:40px;height:40px;font-size:1.3rem">−</button>
+              <div style="font-size:1.1rem;font-weight:900;min-width:28px;text-align:center" id="pisc-modal-qtd">0</div>
+              <button class="btn-pc" onclick="mudaPiscModal(1)" style="width:40px;height:40px;font-size:1.3rem">+</button>
+            </div>
+            <button class="btn-confirmar" id="pisc-modal-add" onclick="addPiscinaModal()" disabled style="width:40px;height:40px;font-size:1.1rem;border-radius:10px">✓</button>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;background:var(--branco);border:2px solid var(--borda);border-radius:10px;overflow:hidden">
-          <button class="btn-pc menos" id="pisc-modal-menos" onclick="mudaPiscModal(-1)" disabled style="width:36px;height:36px;font-size:1.2rem">−</button>
-          <div style="font-size:1rem;font-weight:900;min-width:26px;text-align:center" id="pisc-modal-qtd">0</div>
-          <button class="btn-pc" onclick="mudaPiscModal(1)" style="width:36px;height:36px;font-size:1.2rem">+</button>
+        <div style="flex:1;background:#e0f2ea;border:2px solid #7dd3a8;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:0.95rem;font-weight:800;color:var(--verde)">🧒 Criança — R$ 15</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;background:var(--branco);border-radius:10px;overflow:hidden;border:2px solid var(--borda)">
+              <button class="btn-pc menos" id="pisc-inf-modal-menos" onclick="mudaPiscInfModal(-1)" disabled style="width:40px;height:40px;font-size:1.3rem">−</button>
+              <div style="font-size:1.1rem;font-weight:900;min-width:28px;text-align:center" id="pisc-inf-modal-qtd">0</div>
+              <button class="btn-pc" onclick="mudaPiscInfModal(1)" style="width:40px;height:40px;font-size:1.3rem">+</button>
+            </div>
+            <button class="btn-confirmar" id="pisc-inf-modal-add" onclick="addPiscinaInfModal()" disabled style="width:40px;height:40px;font-size:1.1rem;border-radius:10px">✓</button>
+          </div>
         </div>
-        <button class="btn-confirmar" id="pisc-modal-add" onclick="addPiscinaModal()" disabled style="width:40px;height:36px;font-size:1.1rem;border-radius:10px">✓</button>
-      </div>
-
-      <div style="background:#e0f2ea;border:2px solid #7dd3a8;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div style="flex:1">
-          <div style="font-weight:800;font-size:0.9rem;color:var(--verde)">🧒 Infantil — R$ 15,00</div>
-        </div>
-        <div style="display:flex;align-items:center;background:var(--branco);border:2px solid var(--borda);border-radius:10px;overflow:hidden">
-          <button class="btn-pc menos" id="pisc-inf-modal-menos" onclick="mudaPiscInfModal(-1)" disabled style="width:36px;height:36px;font-size:1.2rem">−</button>
-          <div style="font-size:1rem;font-weight:900;min-width:26px;text-align:center" id="pisc-inf-modal-qtd">0</div>
-          <button class="btn-pc" onclick="mudaPiscInfModal(1)" style="width:36px;height:36px;font-size:1.2rem">+</button>
-        </div>
-        <button class="btn-confirmar" id="pisc-inf-modal-add" onclick="addPiscinaInfModal()" disabled style="width:40px;height:36px;font-size:1.1rem;border-radius:10px">✓</button>
       </div>
 
       <div class="cats" id="m-cats"></div>
@@ -678,7 +679,7 @@ body {
 
 <script>
 /* ===== PIN ===== */
-const PIN_DEFAULT = '1234';
+const PIN_DEFAULT = '0508';
 let pinSalvo = PIN_DEFAULT;
 let pinDigitado = '';
 
