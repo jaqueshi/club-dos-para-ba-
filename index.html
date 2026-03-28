@@ -888,28 +888,8 @@ async function salvarComanda(c) {
     const { error } = await sb.from('comandas').upsert({
       id: c.id, nome: c.nome, itens: c.itens, aberta: c.aberta
     });
-    if (error) {
-      mostrarDebug('ERRO salvar: ' + error.message);
-      mostrarAvisoSemConexao();
-    } else {
-      mostrarDebug('OK salvou: ' + c.nome + ' (' + c.itens.length + ' itens)');
-    }
-  } catch(e) {
-    mostrarDebug('CATCH: ' + e.message);
-    mostrarAvisoSemConexao();
-  }
-}
-
-function mostrarDebug(msg) {
-  let d = document.getElementById('debug-box');
-  if (!d) {
-    d = document.createElement('div');
-    d.id = 'debug-box';
-    d.style.cssText = 'position:fixed;bottom:90px;left:0;right:0;background:#111;color:#0f0;font-size:0.75rem;padding:6px 10px;z-index:9998;max-height:80px;overflow:auto;font-family:monospace';
-    document.body.appendChild(d);
-  }
-  d.innerHTML = new Date().toLocaleTimeString('pt-BR') + ' — ' + msg + '<br>' + d.innerHTML;
-  setTimeout(() => { if(d) d.remove(); }, 15000);
+    if (error) mostrarAvisoSemConexao();
+  } catch(e) { mostrarAvisoSemConexao(); }
 }
 
 async function deletarComanda(id) {
