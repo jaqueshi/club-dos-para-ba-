@@ -950,8 +950,8 @@ async function abrirComanda() {
   const nome = document.getElementById('nomeCliente').value.trim();
   if (!nome) { alert('Digite o nome do cliente!'); return; }
   const itens = [];
-  if (qtdPisc > 0) itens.push({ nome: 'Piscina ×' + qtdPisc, preco: qtdPisc * 20, qtd: 1, pisc: true });
-  if (qtdPiscInf > 0) itens.push({ nome: 'Piscina Infantil ×' + qtdPiscInf, preco: qtdPiscInf * 15, qtd: 1, pisc: true });
+  if (qtdPisc > 0) itens.push({ nome: 'Piscina', preco: 20, qtd: qtdPisc, pisc: true });
+  if (qtdPiscInf > 0) itens.push({ nome: 'Piscina Infantil', preco: 15, qtd: qtdPiscInf, pisc: true });
   const c = { id: Date.now(), nome: nome, itens: itens, aberta: new Date().toISOString() };
   comandas.push(c); salvarLocal(); salvarComanda(c);
   document.getElementById('nomeCliente').value = '';
@@ -1048,7 +1048,9 @@ function mudaPiscModal(d) {
 function addPiscinaModal() {
   if (piscModalQtd === 0) return;
   const c = comandas.find(x => x.id === mId);
-  c.itens.push({ nome: 'Piscina ×' + piscModalQtd, preco: piscModalQtd * 20, qtd: 1, pisc: true });
+  const ex = c.itens.find(i => i.nome === 'Piscina' && i.pisc);
+  if (ex) ex.qtd = (ex.qtd || 1) + piscModalQtd;
+  else c.itens.push({ nome: 'Piscina', preco: 20, qtd: piscModalQtd, pisc: true });
   salvarLocal(); salvarComanda(c);
   piscModalQtd = 0;
   document.getElementById('pisc-modal-qtd').textContent = 0;
@@ -1067,7 +1069,9 @@ function mudaPiscInfModal(d) {
 function addPiscinaInfModal() {
   if (piscInfModalQtd === 0) return;
   const c = comandas.find(x => x.id === mId);
-  c.itens.push({ nome: 'Piscina Infantil ×' + piscInfModalQtd, preco: piscInfModalQtd * 15, qtd: 1, pisc: true });
+  const ex = c.itens.find(i => i.nome === 'Piscina Infantil' && i.pisc);
+  if (ex) ex.qtd = (ex.qtd || 1) + piscInfModalQtd;
+  else c.itens.push({ nome: 'Piscina Infantil', preco: 15, qtd: piscInfModalQtd, pisc: true });
   salvarLocal(); salvarComanda(c);
   piscInfModalQtd = 0;
   document.getElementById('pisc-inf-modal-qtd').textContent = 0;
