@@ -1656,8 +1656,9 @@ function editarProduto(idx) {
 /* UTILS */
 const totalC   = c => c.itens.reduce((s, i) => s + i.preco * (i.qtd || 1), 0);
 const fmt      = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const diaStr   = d => d.toISOString().slice(0, 10);
-const mesStr   = d => d.toISOString().slice(0, 7);
+const toBR    = d => new Date(d.getTime() - 3 * 60 * 60 * 1000);
+const diaStr   = d => toBR(d).toISOString().slice(0, 10);
+const mesStr   = d => toBR(d).toISOString().slice(0, 7);
 const hora     = d => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 const dataHora = d => d.toLocaleDateString('pt-BR') + ' ' + hora(d);
 
