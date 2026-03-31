@@ -487,6 +487,7 @@ body {
     <button class="rel-aba ativa" id="aba-dias"     onclick="mudarAba('dias')"    >📅 Por dia</button>
     <button class="rel-aba"       id="aba-meses"    onclick="mudarAba('meses')"   >📆 Por mês</button>
     <button class="rel-aba"       id="aba-anos"     onclick="mudarAba('anos')"    >📆 Por ano</button>
+    <button class="rel-aba"       id="aba-vendidos" onclick="mudarAba('vendidos')">🏆 Mais vendidos</button>
     <button class="rel-aba"       id="aba-comandas" onclick="mudarAba('comandas')">🧾 Comandas</button>
   </div>
 
@@ -494,6 +495,7 @@ body {
     <div id="rel-aba-dias"></div>
     <div id="rel-aba-meses"    style="display:none"></div>
     <div id="rel-aba-anos"     style="display:none"></div>
+    <div id="rel-aba-vendidos"  style="display:none"></div>
     <div id="rel-aba-comandas" style="display:none"></div>
   </div>
 </div>
@@ -1249,10 +1251,12 @@ function mudarAba(aba) {
   document.getElementById('rel-aba-dias').style.display     = aba === 'dias'     ? '' : 'none';
   document.getElementById('rel-aba-meses').style.display    = aba === 'meses'    ? '' : 'none';
   document.getElementById('rel-aba-anos').style.display     = aba === 'anos'     ? '' : 'none';
+  document.getElementById('rel-aba-vendidos').style.display = aba === 'vendidos' ? '' : 'none';
   document.getElementById('rel-aba-comandas').style.display = aba === 'comandas' ? '' : 'none';
   if (aba === 'dias')     renderAbaDias();
   if (aba === 'meses')    renderAbaMeses();
   if (aba === 'anos')     renderAbaAnos();
+  if (aba === 'vendidos') renderAbaVendidos();
   if (aba === 'comandas') renderAbaComandas();
 
   // reaplica estado do olho (nunca na aba comandas)
@@ -1262,6 +1266,69 @@ function mudarAba(aba) {
   });
   document.querySelectorAll('.rel-linha-sub').forEach(el => {
     el.classList.toggle('escondido-sub', esconder && aba !== 'comandas');
+  });
+}
+
+function renderAbaVendidos() {
+  const el = document.getElementById('rel-aba-vendidos');
+  if (!historico.length) {
+    el.innerHTML = '<div class="vazio">Nenhuma comanda fechada ainda</div>';
+    return;
+  }
+
+  // Agrupa todos os itens do histórico por nome
+  const mapa = {};
+  historico.forEach(h => {
+    (h.itens || []).forEach(it => {
+      if (!mapa[it.nome]) mapa[it.nome] = { nome: it.nome, qtd: 0, total: 0 };
+      mapa[it.nome].qtd   += (it.qtd || 1);
+      mapa[it.nome].total += it.preco * (it.qtd || 1);
+    });
+  });
+
+  const lista = Object.values(mapa).sort((a, b) => b.qtd - a.qtd);
+
+  if (!lista.length) {
+    el.innerHTML = '<div class="vazio">Nenhum produto vendido ainda</div>';
+    return;
+  }
+
+  el.innerHTML = lista.map((item, i) => {
+    const medalha = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '<span style="font-size:0.85rem;color:var(--cinza)">' + (i + 1) + 'º</span>';
+    return '<div class="rel-linha" style="cursor:pointer;align-items:center" onclick="verVendidoDetalhe(\'' + item.nome.replace(/'/g,"\\'") + '\')">'
+      + '<div style="flex:1">'
+      + '<div class="rel-linha-esq" style="display:flex;align-items:center;gap:8px">' + medalha + ' ' + item.nome + '</div>'
+      + '<div class="rel-linha-sub">' + item.qtd + ' unidade(s) • toque para ver por dia</div>'
+      + '</div>'
+      + '<div class="rel-linha-val">R$ ' + fmt(item.total) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function verVendidoDetalhe(nome) {
+  // Conta por dia
+  const porDia = {};
+  historico.forEach(h => {
+    const d = diaStr(new Date(h.data));
+    (h.itens || []).filter(it => it.nome === nome).forEach(it => {
+      if (!porDia[d]) porDia[d] = 0;
+      porDia[d] += (it.qtd || 1);
+    });
+  });
+
+  const dias = Object.keys(porDia).sort().reverse();
+  const totalQtd = dias.reduce((s, d) => s + porDia[d], 0);
+
+  const linhas = dias.map(d => {
+    const dt = new Date(d + 'T12:00:00');
+    const label = dt.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+    return '• ' + label + ': ' + porDia[d] + ' un.';
+  }).join('\n');
+
+  dialogo({
+    icone: '📦',
+    msg: nome + '\n\nTotal vendido: ' + totalQtd + ' unidade(s)\n\n' + linhas,
+    btns: [{ label: 'Fechar', cls: 'cinza', cb: null }]
   });
 }
 
