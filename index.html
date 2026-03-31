@@ -832,15 +832,7 @@ const CARDAPIO = [
 ];
 const CATS = ['🍺 Cervejas','🍽️ Porções','🥤 Refrigerantes','🍹 Caipirinhas','🥃 Doses','🍡 Doces e Salgadinhos','🍦 Sorvete'];
 
-// Carrega cardápio salvo pelo usuário (se editou nas configurações)
-const _cardapioSalvo = localStorage.getItem('cp_cardapio');
-if (_cardapioSalvo) {
-  try {
-    const _parsed = JSON.parse(_cardapioSalvo);
-    CARDAPIO.length = 0;
-    _parsed.forEach(p => CARDAPIO.push(p));
-  } catch(e) { localStorage.removeItem('cp_cardapio'); }
-}
+// Cardápio será carregado do Supabase em carregarDados()
 
 /* ===== SUPABASE ===== */
 const SUPA_URL = 'https://knrdxwvsnaqrytzvgenb.supabase.co';
@@ -856,13 +848,26 @@ const prodQtds = {};
 async function carregarDados() {
   mostrarCarregando(true);
   try {
-    const [{ data: c, error: e1 }, { data: h, error: e2 }] = await Promise.all([
+    const [{ data: c, error: e1 }, { data: h, error: e2 }, { data: card, error: e3 }] = await Promise.all([
       sb.from('comandas').select('*').order('aberta', { ascending: true }),
-      sb.from('historico').select('*').order('data', { ascending: false })
+      sb.from('historico').select('*').order('data', { ascending: false }),
+      sb.from('cardapio').select('*').eq('id', 1).maybeSingle()
     ]);
-    // garantir que id é sempre número
     comandas  = (c || []).map(x => ({ ...x, id: Number(x.id) }));
     historico = h || [];
+    if (card && card.itens && card.itens.length > 0) {
+      CARDAPIO.length = 0;
+      card.itens.forEach(p => CARDAPIO.push(p));
+    } else {
+      // fallback: localStorage
+      const _cardapioSalvo = localStorage.getItem('cp_cardapio');
+      if (_cardapioSalvo) {
+        try {
+          const _parsed = JSON.parse(_cardapioSalvo);
+          if (_parsed.length > 0) { CARDAPIO.length = 0; _parsed.forEach(p => CARDAPIO.push(p)); }
+        } catch(e) {}
+      }
+    }
     salvarLocal();
   } catch(e) {
     try {
@@ -870,6 +875,11 @@ async function carregarDados() {
       const localH = localStorage.getItem('cp_h');
       if (localC) comandas  = JSON.parse(localC);
       if (localH) historico = JSON.parse(localH);
+      const _cardapioSalvo = localStorage.getItem('cp_cardapio');
+      if (_cardapioSalvo) {
+        const _parsed = JSON.parse(_cardapioSalvo);
+        if (_parsed.length > 0) { CARDAPIO.length = 0; _parsed.forEach(p => CARDAPIO.push(p)); }
+      }
     } catch(e2) {}
   }
   try { await carregarPin(); } catch(e) {}
@@ -1260,14 +1270,46 @@ function renderAbaComandas() {
   if (!historico.length) { el.innerHTML = '<div class="vazio">Nenhuma comanda fechada ainda</div>'; return; }
   el.innerHTML = historico.slice().reverse().map((h, i) => {
     const idx = historico.length - 1 - i;
-    return '<div class="rel-linha" onclick="abrirNota(' + idx + ')" style="cursor:pointer">'
-      + '<div>'
+    return '<div class="rel-linha" style="align-items:center">'
+      + '<div style="flex:1;cursor:pointer" onclick="abrirNota(' + idx + ')">'
       + '<div class="rel-linha-esq">' + h.nome + '</div>'
       + '<div class="rel-linha-sub">' + dataHora(new Date(h.data)) + ' &nbsp;•&nbsp; 🧾 ver nota</div>'
       + '</div>'
       + '<div class="rel-linha-val">R$ ' + fmt(h.total) + '</div>'
+      + '<button onclick="excluirHistorico(' + idx + ')" style="margin-left:10px;background:#fee2e2;border:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:0.85rem;color:#dc2626;font-family:Inter,sans-serif">🗑️</button>'
       + '</div>';
   }).join('');
+}
+
+async function excluirHistorico(idx) {
+  const h = historico[idx];
+  if (!h) return;
+  dialogo({
+    icone: '🗑️',
+    msg: 'Excluir a comanda de <b>' + h.nome + '</b>?<br><br>Os totais dos relatórios serão recalculados.',
+    btns: [
+      { label: 'Sim, excluir', cls: 'vermelho', cb: async () => {
+        // remove do Supabase pelo id se disponível
+        if (h.id) {
+          try { await sb.from('historico').delete().eq('id', h.id); } catch(e) {}
+        } else {
+          // fallback: apaga pelo índice via delete matching
+          try { await sb.from('historico').delete().eq('nome', h.nome).eq('data', h.data); } catch(e) {}
+        }
+        historico.splice(idx, 1);
+        salvarLocal();
+        renderAbaComandas();
+        // recarrega abas de totais
+        if (abaAtiva !== 'comandas') mudarAba(abaAtiva);
+        else {
+          // rerenderiza dias/meses/anos em segundo plano para manter consistência
+          renderAbaDias(); renderAbaMeses(); renderAbaAnos();
+        }
+        dialogo({ icone: '✅', msg: 'Comanda excluída e totais atualizados!', btns: [{ label: 'OK', cls: 'verde', cb: null }] });
+      }},
+      { label: 'Cancelar', cls: 'cinza', cb: null }
+    ]
+  });
 }
 
 function abrirNota(idx) {
@@ -1575,12 +1617,15 @@ function cfgMudarCat(cat) {
   renderCardapioConfig();
 }
 
-function salvarCardapio() {
+async function salvarCardapio() {
   localStorage.setItem('cp_cardapio', JSON.stringify(CARDAPIO));
+  try {
+    await sb.from('cardapio').upsert({ id: 1, itens: CARDAPIO, atualizado_em: new Date().toISOString() });
+  } catch(e) { mostrarAvisoSemConexao(); }
   const btn = document.getElementById('btn-salvar-cardapio');
   if (btn) { btn.style.background = ''; btn.textContent = '💾 Salvar cardápio'; }
   fecharModalCardapio();
-  dialogo({ icone: '✅', msg: 'Cardápio salvo!', btns: [{ label: 'OK', cls: 'verde', cb: null }] });
+  dialogo({ icone: '✅', msg: 'Cardápio salvo e sincronizado!', btns: [{ label: 'OK', cls: 'verde', cb: null }] });
 }
 
 function adicionarProduto() {
