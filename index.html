@@ -1781,7 +1781,43 @@ carregarDados().then(() => {
   } else {
     document.getElementById('pin-tela').classList.add('ativa');
   }
+  iniciarRealtime();
 });
+
+/* ===== REALTIME SUPABASE ===== */
+function iniciarRealtime() {
+  sb.channel('sync-comanda')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas' }, async () => {
+      const { data: c } = await sb.from('comandas').select('*').order('aberta', { ascending: true });
+      if (c) {
+        comandas = c.map(x => ({ ...x, id: Number(x.id) }));
+        salvarLocal();
+        renderAbertas();
+        renderResumo();
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'historico' }, async () => {
+      const { data: h } = await sb.from('historico').select('*').order('data', { ascending: false });
+      if (h) {
+        historico = h;
+        salvarLocal();
+        mudarAba(abaAtiva);
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'cardapio' }, async () => {
+      const { data: card } = await sb.from('cardapio').select('*').eq('id', 1).maybeSingle();
+      if (card && card.itens && card.itens.length > 0) {
+        CARDAPIO.length = 0;
+        card.itens.forEach(p => CARDAPIO.push(p));
+        localStorage.setItem('cp_cardapio', JSON.stringify(CARDAPIO));
+        renderCardapioConfig();
+      }
+    })
+    .subscribe((status) => {
+      console.log('[Realtime]', status);
+    });
+}
+/* ===== FIM REALTIME ===== */
 </script>
 </body>
 </html>
